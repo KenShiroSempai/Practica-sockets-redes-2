@@ -18,7 +18,7 @@ public class servidor {
             System.out.println("Error al registrar el driver de PostgreSQL:");
             e.printStackTrace();
         }
-        loadCatalogFromDatabase();
+        loadCatalog();
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             System.out.println("Servidor escuchando en el puerto " + PORT);
 
@@ -33,75 +33,43 @@ public class servidor {
         }
     }
 
-    private static void loadCatalogFromDatabase() {
-        try (Connection connection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
-             Statement stmt = connection.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT * FROM productos")) {
 
-            while (rs.next()) {
-                String productName = rs.getString("nombre");
-                double price = rs.getDouble("precio");
-                int quantity = rs.getInt("cantidad");
 
-                Map<String, Object> product = new HashMap<>();
-                product.put("price", price);
-                product.put("quantity", quantity);
-                catalog.put(productName, product);
-            }
-            System.out.println("Catálogo cargado desde la base de datos.");
-        } catch (SQLException e) {
-            System.out.println("Error al cargar el catálogo desde la base de datos:");
+    private static void saveCatalog() {
+        try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("catalogo.txt"))) {
+            out.writeObject(catalog);
+            System.out.println("Catálogo guardado en catalogo.txt");
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private static void saveCatalogToDatabase() {
-        try (Connection connection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD)) {
-            // Desactivar el autocommit para manejar la transacción manualmente.
-            connection.setAutoCommit(false);
+    private static void loadCatalog() {
+    try (ObjectInputStream in = new ObjectInputStream(new FileInputStream("catalogo.txt"))) {
+        catalog = (Map<String, Map<String, Object>>) in.readObject();
+        System.out.println("Catálogo cargado desde catalogo.txt");
+    } catch (IOException | ClassNotFoundException e) {
+        System.out.println("No se encontró el archivo catalogo.txt. Se creará un nuevo catálogo.");
+        catalog = new HashMap<>();
 
-            try (PreparedStatement stmtInsert = connection.prepareStatement("INSERT INTO productos (nombre, precio, cantidad) VALUES (?, ?, ?)");
-                 PreparedStatement stmtUpdate = connection.prepareStatement("UPDATE productos SET precio = ?, cantidad = ? WHERE nombre = ?")) {
+        Map<String, Object> product1 = new HashMap<>();
+        product1.put("price", 10.0);
+        product1.put("quantity", 10);
+        catalog.put("Manzana", product1);
 
-                for (Map.Entry<String, Map<String, Object>> entry : catalog.entrySet()) {
-                    String productName = entry.getKey();
-                    Map<String, Object> product = entry.getValue();
-                    double price = (double) product.get("price");
-                    int quantity = (int) product.get("quantity");
+        Map<String, Object> product2 = new HashMap<>();
+        product2.put("price", 20.0);
+        product2.put("quantity", 20);
+        catalog.put("Besos", product2);
 
-                    // Intenta actualizar el producto.
-                    stmtUpdate.setDouble(1, price);
-                    stmtUpdate.setInt(2, quantity);
-                    stmtUpdate.setString(3, productName);
-                    int rowsUpdated = stmtUpdate.executeUpdate();
+        Map<String, Object> product3 = new HashMap<>();
+        product3.put("price", 30.0);
+        product3.put("quantity", 30);
+        catalog.put("Manteconchas de chocolate con forma de dinosaurio con corazon", product3);
 
-                    // Si no se actualizó ninguna fila, inserta el producto.
-                    if (rowsUpdated == 0) {
-                        stmtInsert.setString(1, productName);
-                        stmtInsert.setDouble(2, price);
-                        stmtInsert.setInt(3, quantity);
-                        stmtInsert.executeUpdate();
-                    }
-                }
-
-                // Confirmar la transacción.
-                connection.commit();
-                System.out.println("Catálogo guardado en la base de datos.");
-            } catch (SQLException e) {
-                // En caso de error, revertir la transacción.
-                connection.rollback();
-                System.out.println("Error al guardar el catálogo en la base de datos:");
-                e.printStackTrace();
-            } finally {
-                // Restaurar el autocommit.
-                connection.setAutoCommit(true);
-            }
-        } catch (SQLException e) {
-            System.out.println("Error al conectar a la base de datos:");
-            e.printStackTrace();
-        }
+        saveCatalog();
     }
-
+}
     private static class ClientHandler extends Thread {
         private Socket clientSocket;
 
@@ -112,20 +80,20 @@ public class servidor {
         public void run() {
             try (ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream());
                  ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream())) {
-
+        
                 out.writeObject(catalog);
                 out.flush();
-
+        
                 // Procesa las solicitudes del cliente
                 while (true) {
                     Object request = in.readObject();
                     if (request instanceof Map) {
                         catalog = (Map<String, Map<String, Object>>) request;
-                        saveCatalogToDatabase();
+                        saveCatalog();
                         System.out.println("Catálogo actualizado.");
                     }
                 }
-
+        
             } catch (IOException | ClassNotFoundException e) {
                 e.printStackTrace();
             } finally {
