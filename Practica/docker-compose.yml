@@ -1,0 +1,40 @@
+services:
+  server:
+    build:
+      context: .
+    container_name: servidor-carrito
+    ports:
+      - ${SERVER_PORT}:${SERVER_PORT}
+    depends_on:
+      - db
+    environment:
+      - SERVER_PORT=${SERVER_PORT}
+      - DATABASE_URL=${POSTGRES_URL}
+      - DATABASE_USER=${POSTGRES_URL}
+      - DATABASE_PASSWORD=${POSTGRES_URL}
+  db:
+    image: postgres
+    container_name: bdd-carrito
+    restart: always
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_DB=carrito
+      - POSTGRES_USER=sooyaaahri
+      - POSTGRES_PASSWORD=sooyaaahri
+    volumes:
+      - db-data:/var/lib/postgresql/data
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin-carrito
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: carlos@cs3.mx
+      PGADMIN_DEFAULT_PASSWORD: sooyaaahri
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+volumes:
+  db-data:
+  pgadmin-data:
