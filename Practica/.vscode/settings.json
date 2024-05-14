@@ -1,0 +1,11 @@
+{
+    "workbench.colorCustomizations": {
+        "activityBar.background": "#2E245F",
+        "titleBar.activeBackground": "#403385",
+        "titleBar.activeForeground": "#FAF9FD"
+    },
+    "java.project.referencedLibraries": [
+        "lib/**/*.jar",
+        "iText-2.0.8.jar"
+    ]
+}

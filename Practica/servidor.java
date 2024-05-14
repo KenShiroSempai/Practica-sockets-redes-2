@@ -3,7 +3,7 @@ import java.net.*;
 import java.util.*;
 
 public class servidor {
-    private static final int PORT = 8030;
+    private static final int PORT = 6030;
     private static Map<String, Map<String, Object>> catalog = new HashMap<>();
     
     public static void main(String[] args) {
@@ -45,17 +45,17 @@ public class servidor {
         Map<String, Object> product1 = new HashMap<>();
         product1.put("price", 10.0);
         product1.put("quantity", 10);
-        catalog.put("Producto 1", product1);
+        catalog.put("Manzana", product1);
 
         Map<String, Object> product2 = new HashMap<>();
         product2.put("price", 20.0);
         product2.put("quantity", 20);
-        catalog.put("Producto 2", product2);
+        catalog.put("Besos", product2);
 
         Map<String, Object> product3 = new HashMap<>();
         product3.put("price", 30.0);
         product3.put("quantity", 30);
-        catalog.put("Producto 3", product3);
+        catalog.put("Manteconchas de chocolate con forma de dinosaurio con corazon", product3);
 
         saveCatalog();
     }
